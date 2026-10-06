@@ -26,7 +26,8 @@ html = html[:start]+'''  try {
 '''+html[end:]
 html = html.replace("if (info.reason === 'destroyed') return;", "if (info.reason === 'destroyed') return;\n      if (r.backend === 'WEBGL') { showFallback('Graphics were interrupted.', 'Reload the page to pick up the octopus again.'); return; }")
 html = html.replace("renderer = fresh; dyn = fresh.dyn;", "fresh.backend = 'WEBGPU'; renderer = fresh; dyn = fresh.dyn;")
-html = html.replace('let quality = 0;', "let quality = matchMedia('(pointer: coarse)').matches ? 2 : 0;")
+from optimize import optimize
+html = optimize(html)
 html = html.replace("setStatus(state.paused ? 'WEBGPU · PAUSED' : 'WEBGPU · LIVE',", "setStatus(renderer.backend + (state.paused ? ' · PAUSED' : ' · LIVE'),")
 html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.backend + ' · LIVE', 'live');")
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')

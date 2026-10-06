@@ -79,7 +79,7 @@ if 'origin' not in remotes:
     git('remote', 'add', 'origin', repo['clone_url'])
 elif git('remote', 'get-url', 'origin') != repo['clone_url']:
     raise RuntimeError('The local origin points to another repository.')
-git('add', '--', '.gitignore', 'README.md', 'adapt.py', 'webgl-fallback.js', 'publish-github.py', 'dist', 'reference', 'docs')
+git('add', '--', '.gitignore', 'README.md', 'adapt.py', 'optimize.py', 'instrument.py', 'performance-check.js', 'webgl-fallback.js', 'publish-github.py', 'dist', 'reference', 'docs')
 git('-c', 'user.name=Volks', '-c', 'user.email=27095855+Molecule06@users.noreply.github.com', 'commit', '-m', 'Add Opus plush octopus with mobile controls and Volks games branding')
 git('push', '-u', 'origin', 'main')
 try:

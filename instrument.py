@@ -35,10 +35,10 @@ def instrument(html):
     marker='  // ── loop ──'
     hook='''  const checker = new OctopusPerformanceCheck({
     active(enabled) { renderer.measureGPU=enabled; if(!enabled&&renderer.gpuProbe)renderer.gpuProbe.ms=null; },
-    save() { const saved = { paused:state.paused, slow:state.slow, showMesh:state.showMesh, lock:lockQ, shells:renderer.shells }; lockQ=true; state.slow=false; state.showMesh=false; return saved; },
+    save() { const saved = { paused:state.paused, slow:state.slow, showMesh:state.showMesh, lock:lockQ, shells:renderer.shells }; performanceCheckActive=true; lockQ=true; state.slow=false; state.showMesh=false; return saved; },
     apply(phase) { state.paused=phase.paused; renderer.shells=phase.layers; resetAll(); sim.reset(phase.paused?0:0.3); dirty=true; acc=0; },
     nudge() { sim.nudge(0.65); },
-    restore(saved) { state.paused=saved.paused; state.slow=saved.slow; state.showMesh=saved.showMesh; lockQ=saved.lock; renderer.shells=saved.shells; resetAll(); },
+    restore(saved) { state.paused=saved.paused; state.slow=saved.slow; state.showMesh=saved.showMesh; lockQ=saved.lock; performanceCheckActive=false; resize(); renderer.shells=saved.shells; resetAll(); },
     info() { return { backend:renderer.backend, width:renderer.w, height:renderer.h, layers:renderer.shells, vertices:nV, triangles:renderMesh.body.count/3, nodes:sim.n, tets:sim.nT }; }
   });
 '''

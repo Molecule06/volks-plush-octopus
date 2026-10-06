@@ -15,7 +15,9 @@ class OctopusPerformanceCheck {
     this.button.addEventListener('click',()=>this.running?this.finish(true):this.start());
     panel.addEventListener('toggle',()=>{this.samples=[];this.hooks.active(panel.open||this.running);});
     document.addEventListener('visibilitychange',()=>{if(document.hidden){this.samples=[];if(this.running)this.finish(true);}});
-    window.addEventListener('resize',()=>{this.samples=[];if(this.running)this.finish(true);});
+    // Safari's toolbar changes height while scrolling. Only a width/orientation
+    // change invalidates the comparison; the renderer freezes its buffer during it.
+    window.addEventListener('resize',()=>{if(this.running){if(window.innerWidth!==this.viewportWidth)this.finish(true);}else this.samples=[];});
   }
   average(samples,key){return samples.reduce((s,v)=>s+v[key],0)/Math.max(1,samples.length);}
   stats(samples){const intervals=samples.map(s=>s.interval).sort((a,b)=>a-b);return {
@@ -28,7 +30,7 @@ class OctopusPerformanceCheck {
     for(const [el] of this.disabledControls)el.disabled=true;
     this.canvas=document.querySelector('#gl');this.pointerStyle=this.canvas.style.pointerEvents;this.canvas.style.pointerEvents='none';
     this.phases=[{name:'Still · full fur',paused:true,layers:this.full},{name:'Still · no fur drawing',paused:true,layers:0},{name:'Moving · full fur',paused:false,layers:this.full},{name:'Moving · no fur drawing',paused:false,layers:0}];
-    this.width=this.hooks.info().width;this.height=this.hooks.info().height;
+    this.width=this.hooks.info().width;this.height=this.hooks.info().height;this.viewportWidth=window.innerWidth;
     this.button.textContent='Cancel check';this.hud.hidden=false;this.result.textContent='Checking on this device…';this.panel.querySelector('#perfTable').replaceChildren();
     document.querySelector('#stage').scrollIntoView({block:'center',behavior:'instant'});this.next(performance.now());
   }
@@ -51,7 +53,7 @@ class OctopusPerformanceCheck {
     if(this.running)this.hud.textContent=`${this.phases[this.phase].name} · ${s.fps.toFixed(0)} FPS · ${Math.min(16,Math.floor(this.phase*4+(v.now-this.phaseStart)/1000))}/16s`;
   }
   finish(cancelled){if(!this.running)return;this.running=false;this.hooks.restore(this.saved);this.hooks.active(this.panel.open);for(const [el,disabled]of this.disabledControls)el.disabled=disabled;this.canvas.style.pointerEvents=this.pointerStyle;this.button.textContent='Check bottleneck · 16s';this.hud.hidden=true;this.samples=[];
-    if(cancelled){this.result.textContent='Check cancelled. Keep the tab visible and the screen size unchanged while testing.';return;}
+    if(cancelled){this.result.textContent='Check cancelled. Keep the tab visible and avoid rotating the phone or changing screen width while testing.';return;}
     const [stillFull,stillOff,movingFull,movingOff]=this.rows;
     const gain=(a,b)=>{const value=(b.fps/a.fps-1)*100;return Math.abs(value)<.05?0:value;};
     const renderGain=gain(stillFull,stillOff),movingGain=gain(movingFull,movingOff);
