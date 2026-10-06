@@ -12,8 +12,19 @@ initial phone rendering quality, suspension while the tab is hidden, and a WebGL
 compatibility renderer for browsers without WebGPU. The compatibility renderer
 uses the same deforming mesh and simulation, with simplified lighting and fur shading.
 
+The experiment article and mass/volume/energy/holding readouts are removed, including
+their dedicated calculations. The static 10 cm scale note remains. Mass and volume
+constraints used by the soft-body simulation remain necessary for the toy's behavior.
+
+Expand **Performance checker** to see CPU breakdowns and optional WebGPU timestamps.
+Its 16-second A/B check holds resolution and quality fixed, comparing full fur with
+fur drawing off, both still and moving. It resets the toy and restores the controls.
+GPU queries and diagnostic display updates run only while the checker is open or
+testing. Results stay on the device. Desktop measurements do not predict phone FPS;
+run the checker on the phone to identify its bottleneck.
+
 Run `python adapt.py` to regenerate the runnable HTML after changing the adapter
-or `webgl-fallback.js`. Serve `dist` over HTTP locally or HTTPS on a phone. Append
+or `webgl-fallback.js`, `instrument.py`, or `performance-check.js`. Serve `dist` over HTTP locally or HTTPS on a phone. Append
 `?compat=1` to force WebGL2. `?q=0` through `?q=3` selects fixed rendering quality.
 
 The original model comparison belongs to its creator; this working copy is for

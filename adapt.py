@@ -92,5 +92,27 @@ webmcp = '''
   }
 '''
 html = html.replace('  // test mode: ?hold', webmcp+'\n  // test mode: ?hold')
+from instrument import instrument
+html = instrument(html)
+import re
+html = re.sub(r'\s*<details class="notes">[\s\S]*?</details>', '', html)
+html = re.sub(r"\$\('#n(?:Particles|Tets|Shells)'\)\.textContent = [^;]+;", '', html)
+html = re.sub(r'^\s*\.notes[^\n]*\n', '', html, flags=re.MULTILINE)
+html = html.replace(', .notes,', ',').replace(' "notes notes"', '').replace(' "notes"', '')
+html = html.replace('.check, .notes p', '.check')
+html = re.sub(r'\s*<dl class="stats">[\s\S]*?</dl>', '', html)
+html = re.sub(r'\s*<p class="footnote">[\s\S]*?</p>', '', html)
+html = html.replace('aria-label="Live readouts"', 'aria-label="Tool instructions"')
+html = re.sub(r'  const massOut = [\s\S]*?\n  }\n(?=\n  // expose)', '', html)
+html = html.replace('updateReadouts();', '')
+html = html.replace('readoutT = 0, ', '').replace('readoutT += dt; ', '')
+html = re.sub(r'    if \(readoutT > 0\.15\) [^\n]*\n', '', html)
+html = re.sub(r'  volumeRatio\(\) [^\n]*\n', '', html)
+html = re.sub(r'^const DENSITY = [^\n]*\n', '', html, flags=re.MULTILINE)
+html = re.sub(r'  let vol = 0, area = 0;[\s\S]*?(?=  const rest = new Float32Array\(pos\);)', '', html)
+html = html.replace(', skinVol: vol, area', '')
+html = re.sub(r'^\s*\.(?:stats|footnote)[^\n]*\n', '', html, flags=re.MULTILINE)
+html = re.sub(r'(<section class="readouts"[\s\S]*?)(\s*</section>)', r'\1<p class="scale-note">Illustrative scale: 1 sim unit ≈ 10 cm (an octopus 38 cm from tip to tip).</p>\2', html, count=1)
+html = html.replace('</head>', '<style>.scale-note{font-size:12px;line-height:1.5;color:var(--muted);max-width:400px;margin:9px 0 0}</style></head>', 1)
 (root/'dist/index.html').write_text(html, encoding='utf-8')
 print(f'Adapted the original Opus artifact: {len(html):,} characters.')
