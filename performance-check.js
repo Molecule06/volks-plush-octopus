@@ -3,7 +3,7 @@
 class OctopusPerformanceCheck {
   constructor(hooks) {
     this.hooks=hooks;this.samples=[];this.phaseSamples=[];this.running=false;this.lastPublish=0;
-    const panel=document.createElement('details');panel.className='perf-check';panel.id='performance';
+    const panel=document.createElement('details');panel.className='perf-check';panel.id='performance';panel.hidden=true;
     panel.innerHTML=`<summary>Performance checker</summary>
       <dl class="perf-live"><div><dt>FPS</dt><dd id="perfFPS">—</dd></div><div><dt>Frame</dt><dd id="perfFrame">—</dd></div><div><dt>Physics CPU</dt><dd id="perfPhysics">—</dd></div><div><dt>Skin + fur CPU</dt><dd id="perfSkin">—</dd></div><div><dt>Draw submit CPU</dt><dd id="perfSubmit">—</dd></div><div><dt>GPU execution</dt><dd id="perfGPU">—</dd></div><div><dt>Fur layers</dt><dd id="perfLayers">—</dd></div></dl>
       <p class="perf-note" id="perfGeometry"></p><button type="button" class="btn" id="perfRun">Check bottleneck · 16s</button>
@@ -13,18 +13,32 @@ class OctopusPerformanceCheck {
     this.button=panel.querySelector('#perfRun');this.result=panel.querySelector('#perfResult');
     const hud=document.createElement('div');hud.className='perf-hud';hud.hidden=true;hud.setAttribute('role','status');document.querySelector('#stage').appendChild(hud);this.hud=hud;
     this.button.addEventListener('click',()=>this.running?this.finish(true):this.start());
-    panel.addEventListener('toggle',()=>{this.samples=[];this.hooks.active(panel.open||this.running);});
+    panel.addEventListener('toggle',()=>{this.samples=[];this.hooks.active((!panel.hidden&&panel.open)||this.running);});
+    this.trigger=document.querySelector('#devTrigger');
+    let taps=0,lastTap=0;
+    this.trigger.addEventListener('click',()=>{const now=performance.now();taps=now-lastTap<1000?taps+1:1;lastTap=now;if(taps===5){taps=0;this.showDeveloperPanel(panel.hidden);}});
+    window.addEventListener('keydown',e=>{
+      if(e.repeat||e.target.closest?.('input,textarea,[contenteditable]'))return;
+      if(e.code==='KeyP'&&e.shiftKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();this.showDeveloperPanel(panel.hidden);}
+      else if(e.key==='Escape'&&!panel.hidden){e.preventDefault();this.showDeveloperPanel(false);this.trigger.focus({preventScroll:true});}
+    });
     document.addEventListener('visibilitychange',()=>{if(document.hidden){this.samples=[];if(this.running)this.finish(true);}});
     // Safari's toolbar changes height while scrolling. Only a width/orientation
     // change invalidates the comparison; the renderer freezes its buffer during it.
     window.addEventListener('resize',()=>{if(this.running){if(window.innerWidth!==this.viewportWidth)this.finish(true);}else this.samples=[];});
+  }
+  showDeveloperPanel(show){
+    if(!show&&this.running)this.finish(true);
+    this.panel.hidden=!show;this.panel.open=show;this.samples=[];
+    this.hooks.active(show);
+    if(show)this.panel.querySelector('summary').focus({preventScroll:true});
   }
   average(samples,key){return samples.reduce((s,v)=>s+v[key],0)/Math.max(1,samples.length);}
   stats(samples){const intervals=samples.map(s=>s.interval).sort((a,b)=>a-b);return {
     frames:samples.length,fps:1000/this.average(samples,'interval'),frameMs:this.average(samples,'interval'),p95Ms:intervals[Math.min(intervals.length-1,Math.floor(intervals.length*.95))]||0,
     physicsMs:this.average(samples,'physics'),skinFurMs:this.average(samples,'skin'),submitMs:this.average(samples,'submit'),cpuMs:this.average(samples,'cpu'),gpuMs:samples.some(s=>Number.isFinite(s.gpu))?this.average(samples.filter(s=>Number.isFinite(s.gpu)),'gpu'):null};}
   start(){
-    if(!document.body.classList.contains('ready'))return;
+    if(this.panel.hidden||!document.body.classList.contains('ready'))return;
     this.saved=this.hooks.save();this.full=this.saved.shells;this.rows=[];this.running=true;this.phase=-1;this.hooks.active(true);
     this.disabledControls=[...document.querySelectorAll('.panel button,.panel input')].filter(el=>el!==this.button).map(el=>[el,el.disabled]);
     for(const [el] of this.disabledControls)el.disabled=true;
@@ -37,7 +51,7 @@ class OctopusPerformanceCheck {
   next(now){this.phase++;if(this.phase===this.phases.length){this.finish(false);return;}
     this.phaseSamples=[];this.phaseStart=now;this.nextNudge=now+1000;this.hooks.apply(this.phases[this.phase]);}
   sample(v){
-    if(!this.running&&!this.panel.open)return;
+    if(!this.running&&(this.panel.hidden||!this.panel.open))return;
     if(!Number.isFinite(v.interval)||v.interval<=0)return;
     this.samples.push(v);if(this.samples.length>120)this.samples.shift();
     if(this.running){const elapsed=v.now-this.phaseStart,p=this.phases[this.phase];

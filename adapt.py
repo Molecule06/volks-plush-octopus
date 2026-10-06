@@ -32,7 +32,7 @@ html = html.replace("setStatus(state.paused ? 'WEBGPU · PAUSED' : 'WEBGPU · LI
 html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.backend + ' · LIVE', 'live');")
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')
 html = html.replace("<title>Plush Octopus</title>", "<title>Plush Octopus · Opus material study</title>")
-html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Plush</span><span>Octopus.</span></h1><p class="brand">Volks Games</p>')
+html = html.replace('<div class="kicker">Material Studies / No. 012</div>', '<button class="kicker dev-trigger" id="devTrigger" type="button" aria-keyshortcuts="Shift+P">Volks Games</button>')
 palette_start = html.index('const PALETTES = {')
 palette_end = html.index('\n};', palette_start) + 3
 html = html[:palette_start] + '''const PALETTES = {
@@ -57,7 +57,8 @@ html = html.replace("setPalette('coral');", "setPalette('blue');")
 css = '''
 /* Phone adaptations: preserve the original studio and type direction. */
 body { min-height: 100dvh; }
-.brand { font: 500 14px/1.3 var(--sans); letter-spacing: .14em; margin: -4px 0 18px; }
+.dev-trigger { display: block; pointer-events: auto; border: 0; padding: 16px 0; margin: -16px 0; background: transparent; text-align: left; text-transform: none; touch-action: manipulation; }
+.dev-trigger:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
 .panel { max-height: calc(100dvh - 100px); overflow-y: auto; }
 .tool, .btn, .swatch { touch-action: manipulation; }
 @media (max-width: 860px), (max-height: 560px) and (max-width: 1000px) {
@@ -70,11 +71,7 @@ body { min-height: 100dvh; }
   .stage { height: clamp(280px, 43svh, 520px); }
   .panel { max-height: none; overflow: visible; padding: 18px; }
   .label, .kicker { font-size: 12px; }
-  .swname, .slider output, .check, .notes p { font-size: 14px; }
-  input[type=range] { height: 40px; }
-  input[type=range]::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -10px; }
-  input[type=range]::-moz-range-thumb { width: 20px; height: 20px; }
-  .slider .ends { font-size: 12px; }
+.swname, .check, .notes p { font-size: 14px; }
   .check { min-height: 44px; }
   .check .box { width: 16px; height: 16px; }
   .hint { font-size: 16px; max-width: none; }
@@ -117,6 +114,19 @@ html = html.replace('  // test mode: ?hold', webmcp+'\n  // test mode: ?hold')
 from instrument import instrument
 html = instrument(html)
 import re
+html = re.sub(r'\s*<p class="caption">[\s\S]*?</p>', '', html)
+html = re.sub(r'^\s*\.caption[^\n]*\n', '', html, flags=re.MULTILINE)
+html = html.replace('    <header><span class="label">The Specimen</span><span>fig. 12</span></header>\n', '')
+html = html.replace('aria-label="Specimen controls"', 'aria-label="Octopus controls"')
+slider_start = html.index('    <div class="group">\n      <div class="slider">')
+slider_end = html.index('    <div class="group">\n      <div class="buttons">', slider_start)
+html = html[:slider_start] + html[slider_end:]
+sync_start = html.index("  const firm = $('#firmness')")
+sync_end = html.index("  $('#shake').addEventListener", sync_start)
+html = html[:sync_start] + html[sync_end:]
+html = re.sub(r'^\s*(?:\.panel header|\.slider|input\[type=range\])[^\n]*\n', '', html, flags=re.MULTILINE)
+html = html.replace(', input[type=range]:focus-visible', '')
+html = re.sub(r'^const SCALE_CM = [^\n]*\n', '', html, flags=re.MULTILINE)
 html = re.sub(r'\s*<details class="notes">[\s\S]*?</details>', '', html)
 html = re.sub(r"\$\('#n(?:Particles|Tets|Shells)'\)\.textContent = [^;]+;", '', html)
 html = re.sub(r'^\s*\.notes[^\n]*\n', '', html, flags=re.MULTILINE)

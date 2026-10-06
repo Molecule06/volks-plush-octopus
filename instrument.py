@@ -22,6 +22,7 @@ def instrument(html):
     if(measureGPU){const g=this.gpuProbe;g.read.mapAsync(GPUMapMode.READ).then(()=>{const t=new BigUint64Array(g.read.getMappedRange());g.ms=Number(t[1]-t[0])/1e6;g.read.unmap();}).catch(()=>{g.ms=null;}).finally(()=>{g.pending=false;});}''',1)
     css='''<style>
     .perf-check{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-size:14px;}
+    .perf-check[hidden]{display:none;}
     .perf-check summary{cursor:pointer;min-height:36px;display:flex;align-items:center;}
     .perf-live{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px;}
     .perf-live dt{font-size:12px;color:var(--muted);}.perf-live dd{margin:3px 0 0;font:14px var(--mono);}

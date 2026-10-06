@@ -23,7 +23,14 @@ The experiment article and mass/volume/energy/holding readouts are removed, incl
 their dedicated calculations. The static 10 cm scale note remains. Mass and volume
 constraints used by the soft-body simulation remain necessary for the toy's behavior.
 
-Expand **Performance checker** to see CPU breakdowns and optional WebGPU timestamps.
+The caption and controls header, plus the stuffing, pile, and damping sliders, are removed, together
+with their slider listeners and styling. The toy uses its fixed simulation defaults.
+The top label reads Volks Games; the old study number and duplicate branding are removed.
+
+The **Performance checker** is hidden on every page load. Press **Shift+P** or click/tap
+**Volks Games** five times quickly to reveal it. Repeat either gesture to hide it;
+**Escape** also hides it and cancels an active check. Revealing it shows CPU breakdowns
+and optional WebGPU timestamps. Hidden diagnostics do not update or issue GPU queries.
 Its 16-second A/B check holds resolution and quality fixed, comparing full fur with
 fur drawing off, both still and moving. It resets the toy and restores the controls.
 GPU queries and diagnostic display updates run only while the checker is open or
