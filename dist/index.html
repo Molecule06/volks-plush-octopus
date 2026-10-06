@@ -3102,20 +3102,20 @@ const lin = h => [1, 3, 5].map(i => srgbToLin(parseInt(h.slice(i, i + 2), 16) / 
 
 // three dyed lots of the same pattern (linear RGB, from sRGB hex)
 const PALETTES = {
-  coral: {
-    name: 'Coral',
-    furRoot: lin('#c8473f'), furTip: lin('#ff9f8c'), under: lin('#ffe1d0'), sucker: lin('#f39a8e'), cheek: lin('#ff5f86'),
-    iris: lin('#5a3410'), shadowTint: [0.6, 0.5, 0.5],
-  },
-  lilac: {
-    name: 'Lilac',
-    furRoot: lin('#7a5cb8'), furTip: lin('#cdb8f4'), under: lin('#f3eaff'), sucker: lin('#c9a9f2'), cheek: lin('#f580b5'),
-    iris: lin('#4a3a1a'), shadowTint: [0.55, 0.52, 0.6],
+  blue: {
+    name: 'Blue',
+    furRoot: lin('#285bc5'), furTip: lin('#97c7ff'), under: lin('#e4efff'), sucker: lin('#a4c7ff'), cheek: lin('#e6a1ce'),
+    iris: lin('#253d62'), shadowTint: [0.48, 0.52, 0.62],
   },
   lagoon: {
     name: 'Lagoon',
     furRoot: lin('#1f7f86'), furTip: lin('#8fdfd6'), under: lin('#e3f6f1'), sucker: lin('#97ddd3'), cheek: lin('#f5878f'),
     iris: lin('#6a3a12'), shadowTint: [0.5, 0.56, 0.56],
+  },
+  orchid: {
+    name: 'Orchid',
+    furRoot: lin('#a756a0'), furTip: lin('#edb2e2'), under: lin('#fae5f3'), sucker: lin('#df9ed2'), cheek: lin('#ff9fc4'),
+    iris: lin('#523454'), shadowTint: [0.60, 0.50, 0.59],
   },
 };
 const SKIN = lin('#e9b9a0');
@@ -3221,7 +3221,7 @@ async function main() {
   let crownNode = 0;
   { let bd = Infinity; for (let i = 0; i < sim.n; i++) { const d = Math.hypot(sim.rest[3 * i] - HEAD.c[0], sim.rest[3 * i + 1] - (HEAD.c[1] + 0.55), sim.rest[3 * i + 2] - HEAD.c[2]); if (d < bd) { bd = d; crownNode = i; } } }
 
-  let currentPalette = 'coral';
+  let currentPalette = 'blue';
   const swatches = $('#swatches');
   for (const [key, p] of Object.entries(PALETTES)) {
     const b = document.createElement('button');
@@ -3237,7 +3237,7 @@ async function main() {
     for (const b of swatches.children) b.setAttribute('aria-checked', String(b.dataset.key === key));
     document.documentElement.style.setProperty('--accent', hex(PALETTES[key].furRoot));
   }
-  setPalette('coral');
+  setPalette('blue');
 
   let renderer;
   const fmesh = fingerMesh();
@@ -3935,11 +3935,11 @@ async function main() {
     try {
       Promise.resolve(context.registerTool({
         name: 'set_octopus_material', title: 'Set octopus fur colour',
-        description: 'Change the visible octopus fur to Coral, Lilac, or Lagoon.',
-        inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['coral', 'lilac', 'lagoon'] } }, required: ['colour'], additionalProperties: false },
+        description: 'Change the visible octopus fur to Blue, Lagoon, or Orchid (purple-pink).',
+        inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['blue', 'lagoon', 'orchid'] } }, required: ['colour'], additionalProperties: false },
         annotations: { readOnlyHint: false, untrustedContentHint: false },
         execute(input) {
-          if (!input || !Object.hasOwn(PALETTES, input.colour) || Object.keys(input).length !== 1) throw new Error('Choose coral, lilac, or lagoon.');
+          if (!input || !Object.hasOwn(PALETTES, input.colour) || Object.keys(input).length !== 1) throw new Error('Choose blue, lagoon, or orchid.');
           setPalette(input.colour); return { colour: input.colour };
         }
       }, { signal: lifecycle.signal })).catch(console.warn);

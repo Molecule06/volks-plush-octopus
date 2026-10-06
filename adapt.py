@@ -33,6 +33,27 @@ html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')
 html = html.replace("<title>Plush Octopus</title>", "<title>Plush Octopus · Opus material study</title>")
 html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Plush</span><span>Octopus.</span></h1><p class="brand">Volks Games</p>')
+palette_start = html.index('const PALETTES = {')
+palette_end = html.index('\n};', palette_start) + 3
+html = html[:palette_start] + '''const PALETTES = {
+  blue: {
+    name: 'Blue',
+    furRoot: lin('#285bc5'), furTip: lin('#97c7ff'), under: lin('#e4efff'), sucker: lin('#a4c7ff'), cheek: lin('#e6a1ce'),
+    iris: lin('#253d62'), shadowTint: [0.48, 0.52, 0.62],
+  },
+  lagoon: {
+    name: 'Lagoon',
+    furRoot: lin('#1f7f86'), furTip: lin('#8fdfd6'), under: lin('#e3f6f1'), sucker: lin('#97ddd3'), cheek: lin('#f5878f'),
+    iris: lin('#6a3a12'), shadowTint: [0.5, 0.56, 0.56],
+  },
+  orchid: {
+    name: 'Orchid',
+    furRoot: lin('#a756a0'), furTip: lin('#edb2e2'), under: lin('#fae5f3'), sucker: lin('#df9ed2'), cheek: lin('#ff9fc4'),
+    iris: lin('#523454'), shadowTint: [0.60, 0.50, 0.59],
+  },
+};''' + html[palette_end:]
+html = html.replace("let currentPalette = 'coral';", "let currentPalette = 'blue';")
+html = html.replace("setPalette('coral');", "setPalette('blue');")
 css = '''
 /* Phone adaptations: preserve the original studio and type direction. */
 body { min-height: 100dvh; }
@@ -81,11 +102,11 @@ webmcp = '''
     try {
       Promise.resolve(context.registerTool({
         name: 'set_octopus_material', title: 'Set octopus fur colour',
-        description: 'Change the visible octopus fur to Coral, Lilac, or Lagoon.',
-        inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['coral', 'lilac', 'lagoon'] } }, required: ['colour'], additionalProperties: false },
+        description: 'Change the visible octopus fur to Blue, Lagoon, or Orchid (purple-pink).',
+        inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['blue', 'lagoon', 'orchid'] } }, required: ['colour'], additionalProperties: false },
         annotations: { readOnlyHint: false, untrustedContentHint: false },
         execute(input) {
-          if (!input || !Object.hasOwn(PALETTES, input.colour) || Object.keys(input).length !== 1) throw new Error('Choose coral, lilac, or lagoon.');
+          if (!input || !Object.hasOwn(PALETTES, input.colour) || Object.keys(input).length !== 1) throw new Error('Choose blue, lagoon, or orchid.');
           setPalette(input.colour); return { colour: input.colour };
         }
       }, { signal: lifecycle.signal })).catch(console.warn);
