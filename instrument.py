@@ -5,7 +5,7 @@ def instrument(html):
     code=(root/'performance-check.js').read_text(encoding='utf-8')
     html=html.replace('// ===== main.js =====',code+'\n// ===== main.js =====')
     html=html.replace('const device = await adapter.requestDevice();', "const device = await adapter.requestDevice({requiredFeatures:adapter.features.has('timestamp-query')?['timestamp-query']:[]});")
-    html=html.replace('    this.shells = 40;', '''    this.shells = 40;
+    html=html.replace('    this.shells = MOBILE_RENDER ? 0 : 40;', '''    this.shells = MOBILE_RENDER ? 0 : 40;
     if(device.features.has('timestamp-query'))this.gpuProbe={
       querySet:device.createQuerySet({type:'timestamp',count:2}),
       resolve:device.createBuffer({size:16,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC}),
@@ -40,7 +40,7 @@ def instrument(html):
     apply(phase) { state.paused=phase.paused; renderer.shells=phase.layers; resetAll(); sim.reset(phase.paused?0:0.3); dirty=true; acc=0; },
     nudge() { sim.nudge(0.65); },
     restore(saved) { state.paused=saved.paused; state.slow=saved.slow; state.showMesh=saved.showMesh; lockQ=saved.lock; performanceCheckActive=false; resize(); renderer.shells=saved.shells; resetAll(); },
-    info() { return { backend:renderer.backend, width:renderer.w, height:renderer.h, layers:renderer.shells, vertices:nV, triangles:renderMesh.body.count/3, nodes:sim.n, tets:sim.nT }; }
+    info() { return { backend:renderer.backend, width:renderer.w, height:renderer.h, layers:renderer.shells, furEnabled:!MOBILE_RENDER, vertices:nV, triangles:renderMesh.body.count/3, nodes:sim.n, tets:sim.nT }; }
   });
 '''
     html=html.replace(marker,hook+'\n'+marker)

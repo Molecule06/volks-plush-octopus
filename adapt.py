@@ -31,7 +31,11 @@ html = optimize(html)
 html = html.replace("setStatus(state.paused ? 'WEBGPU · PAUSED' : 'WEBGPU · LIVE',", "setStatus(renderer.backend + (state.paused ? ' · PAUSED' : ' · LIVE'),")
 html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.backend + ' · LIVE', 'live');")
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')
-html = html.replace("<title>Plush Octopus</title>", "<title>Plush Octopus · Opus material study</title>")
+html = html.replace("<title>Plush Octopus</title>", "<title>Octo · Volks Games</title>")
+html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Octo</span></h1>')
+html = html.replace('Interactive 3D plush octopus with real-time fur.', 'Interactive 3D Octo with real-time fur.')
+html = html.replace('An interactive WebGPU study of a plush octopus: eight soft arms in real-time shell fur — stretch each arm, shake it, offer a finger and it holds on.', 'Play with Octo, a soft 3D octopus. Stretch its arms, shake it, or offer it a finger to hold.')
+html = html.replace("b.setAttribute('aria-label', p.name + ' fur');", "b.setAttribute('aria-label', p.name + (MOBILE_RENDER ? ' color' : ' fur'));")
 html = html.replace('<div class="kicker">Material Studies / No. 012</div>', '<button class="kicker dev-trigger" id="devTrigger" type="button" aria-keyshortcuts="Shift+P">Volks Games</button>')
 palette_start = html.index('const PALETTES = {')
 palette_end = html.index('\n};', palette_start) + 3
@@ -98,8 +102,8 @@ webmcp = '''
     window.addEventListener('pagehide', () => lifecycle.abort(), { once: true });
     try {
       Promise.resolve(context.registerTool({
-        name: 'set_octopus_material', title: 'Set octopus fur colour',
-        description: 'Change the visible octopus fur to Blue, Lagoon, or Orchid (purple-pink).',
+        name: 'set_octopus_material', title: 'Set Octo color',
+        description: 'Change Octo to Blue, Lagoon, or Orchid (purple-pink).',
         inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['blue', 'lagoon', 'orchid'] } }, required: ['colour'], additionalProperties: false },
         annotations: { readOnlyHint: false, untrustedContentHint: false },
         execute(input) {

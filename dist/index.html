@@ -1,6 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Plush Octopus · Opus material study</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Octo · Volks Games</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23e0584c' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M9 19c-3 3-6 3-6 0M13 21c-1 4-4 6-6 4M19 21c1 4 4 6 6 4M23 19c3 3 6 3 6 0'/%3E%3C/g%3E%3Ccircle cx='16' cy='13' r='10' fill='%23e0584c'/%3E%3Ccircle cx='12.5' cy='14' r='2' fill='%23161210'/%3E%3Ccircle cx='19.5' cy='14' r='2' fill='%23161210'/%3E%3C/svg%3E">
-<meta name="description" content="An interactive WebGPU study of a plush octopus: eight soft arms in real-time shell fur — stretch each arm, shake it, offer a finger and it holds on.">
+<meta name="description" content="Play with Octo, a soft 3D octopus. Stretch its arms, shake it, or offer it a finger to hold.">
 <style>
   :root {
     --bg: #E2DFDA;
@@ -173,7 +173,7 @@ body { min-height: 100dvh; }
     .perf-hud[hidden]{display:none;}
     </style><style>.scale-note{font-size:12px;line-height:1.5;color:var(--muted);max-width:400px;margin:9px 0 0}</style></head><body>
 <div class="stage" id="stage">
-    <canvas id="gl" aria-label="Interactive 3D plush octopus with real-time fur. Drag the head or an arm to stretch it, offer it a finger to hold, shake it, or comb its fur." role="img"></canvas>
+    <canvas id="gl" aria-label="Interactive 3D Octo with real-time fur. Drag the head or an arm to stretch it, offer it a finger to hold, shake it, or comb its fur." role="img"></canvas>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="fallback" id="fallback" hidden>
       <div>
@@ -186,7 +186,7 @@ body { min-height: 100dvh; }
 
   <header class="masthead">
     <button class="kicker dev-trigger" id="devTrigger" type="button" aria-keyshortcuts="Shift+P">Volks Games</button>
-    <h1><span>Plush</span><span>Octopus.</span></h1>
+    <h1><span>Octo</span></h1>
   </header>
 
   <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="statusText">WEBGPU · STARTING</span></div>
@@ -2268,7 +2268,7 @@ fn furAlbedo(R: vec4f, R2: vec2f, h: f32, id: f32) -> vec3f {
   let V = normalize(u.camPos.xyz - i.wp);
   let L = u.keyDir.xyz;
   let R = i.reg;
-  var alb = furAlbedo(R, i.reg2, 0.0, 0.5) * 0.72;
+  var alb = furAlbedo(R, i.reg2, 0.0, 0.5) * ${MOBILE_RENDER ? '1.0' : '0.72'};
   alb = mix(alb, u.furRoot.rgb * 0.12, R.w);   // thread lines
   let dif = clamp(dot(N, L) * 0.6 + 0.4, 0.0, 1.0);
   let lowAO = mix(0.55, 1.0, sstep(0.0, 0.35, i.wp.y - u.misc.z));
@@ -2506,7 +2506,7 @@ class Renderer {
     this.topTex = device.createTexture({ size: [this.topSize, this.topSize], format: 'depth32float', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING });
     this.buildPipelines();
     this.w = 0; this.h = 0;
-    this.shells = 40;
+    this.shells = MOBILE_RENDER ? 0 : 40;
     if(device.features.has('timestamp-query'))this.gpuProbe={
       querySet:device.createQuerySet({type:'timestamp',count:2}),
       resolve:device.createBuffer({size:16,usage:GPUBufferUsage.QUERY_RESOLVE|GPUBufferUsage.COPY_SRC}),
@@ -2613,7 +2613,7 @@ class Renderer {
       primitive: { topology: 'triangle-list', cullMode: 'back' },
       depthStencil: depthOpaque, multisample: ms,
     });
-    this.pShell = d.createRenderPipeline({
+    this.pShell = MOBILE_RENDER ? null : d.createRenderPipeline({
       label: 'fur shells', layout: pl(this.layoutScene),
       vertex: { module: this.modules.scene, entryPoint: 'vsShell', buffers: furVB },
       fragment: { module: this.modules.scene, entryPoint: 'fsShell', targets: [{ format: HDR }] },
@@ -2705,7 +2705,7 @@ class Renderer {
   uploadGeometry(particles, showMesh, moved) {
     if (moved) this.device.queue.writeBuffer(this.dynBuf, 0, this.dyn);
     if (this.fingerVisible) this.device.queue.writeBuffer(this.fingerDynBuf, 0, this.fingerDyn);
-    this.device.queue.writeBuffer(this.furBuf, 0, this.fur);
+    if (!MOBILE_RENDER) this.device.queue.writeBuffer(this.furBuf, 0, this.fur);
     if (showMesh) this.device.queue.writeBuffer(this.particleBuf, 0, particles);
   }
 
@@ -2752,8 +2752,10 @@ class Renderer {
         p.drawIndexed(this.fingerCount, 1, 0, 0, 0);
         p.setVertexBuffer(0, this.dynBuf); p.setVertexBuffer(1, this.staticBuf); p.setIndexBuffer(this.indexBuf, 'uint32');
       }
-      p.setPipeline(this.pShell);
-      p.drawIndexed(m.body.count, this.shells, 0, 0, 0);
+      if (this.shells > 0 && this.pShell) {
+        p.setPipeline(this.pShell);
+        p.drawIndexed(m.body.count, this.shells, 0, 0, 0);
+      }
       if (showMesh) {
         p.setPipeline(this.pLines);
         p.setVertexBuffer(0, this.particleBuf); p.setIndexBuffer(this.lineIdx, 'uint32');
@@ -2798,7 +2800,7 @@ class WebGLRenderer {
     this.canvas = canvas; this.backend = 'WEBGL'; this.mesh = mesh;
     const gl = this.gl = canvas.getContext('webgl2', {antialias: true, alpha: false, powerPreference: 'high-performance'});
     if (!gl) throw new Error('This browser could not start 3D graphics. Try enabling hardware acceleration.');
-    this.lost = false; this.w = this.h = 0; this.shells = 24;
+    this.lost = false; this.w = this.h = 0; this.shells = MOBILE_RENDER ? 0 : 24;
     canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; this.onLost?.({reason: 'lost', message: 'Graphics were interrupted. Reload to restart.'}); });
     const vertex = `#version 300 es
       precision highp float; precision highp int;
@@ -2947,7 +2949,7 @@ class WebGLRenderer {
   resize(w,h){this.w=this.canvas.width=Math.max(1,Math.floor(w));this.h=this.canvas.height=Math.max(1,Math.floor(h));}
   setUniforms(cam,light,palette,params){this.cam=cam;this.light=light;this.palette=palette;this.params=params;}
   uploadGeometry(particles,showMesh,moved){const gl=this.gl;const upload=(b,d)=>{gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferSubData(gl.ARRAY_BUFFER,0,d);};
-    if(moved)upload(this.bodyVAO.dynBuf,this.dyn);upload(this.bodyVAO.furBuf,this.fur);
+    if(moved)upload(this.bodyVAO.dynBuf,this.dyn);if(!MOBILE_RENDER)upload(this.bodyVAO.furBuf,this.fur);
     if(this.fingerVisible)upload(this.fingerVAO.dynBuf,this.fingerDyn);if(showMesh)upload(this.particleBuf,particles);}
   uniforms(p){const gl=this.gl;gl.useProgram(p);const u=n=>gl.getUniformLocation(p,n);
     gl.uniformMatrix4fv(u('vp'),false,this.cam.viewProj);gl.uniformMatrix4fv(u('inv'),false,this.cam.invViewProj);
@@ -2970,7 +2972,7 @@ class WebGLRenderer {
     const mode=gl.getUniformLocation(this.program,'mode');gl.uniform1i(mode,2);gl.drawElements(gl.TRIANGLES,m.props.count,gl.UNSIGNED_INT,m.props.first*4);
     gl.uniform1i(mode,0);gl.drawElements(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0);
     if(this.fingerVisible){gl.bindVertexArray(this.fingerVAO.vao);gl.uniform1i(mode,2);gl.drawElements(gl.TRIANGLES,this.fingerCount,gl.UNSIGNED_INT,0);gl.bindVertexArray(this.bodyVAO.vao);}
-    gl.uniform1i(mode,1);gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);gl.drawElementsInstanced(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0,this.shells);gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    if(this.shells>0){gl.uniform1i(mode,1);gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);gl.drawElementsInstanced(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0,this.shells);gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);}
     if(showMesh){gl.bindVertexArray(this.lineVAO);gl.disable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.uniform1i(mode,3);gl.drawElements(gl.LINES,this.edges.length,gl.UNSIGNED_INT,0);gl.disable(gl.BLEND);}
     gl.bindVertexArray(null);
   }
@@ -2982,11 +2984,13 @@ class WebGLRenderer {
 class OctopusPerformanceCheck {
   constructor(hooks) {
     this.hooks=hooks;this.samples=[];this.phaseSamples=[];this.running=false;this.lastPublish=0;
+    this.furEnabled=hooks.info().furEnabled;
+    this.runLabel=this.furEnabled?'Check bottleneck · 16s':'Check performance · 8s';
     const panel=document.createElement('details');panel.className='perf-check';panel.id='performance';panel.hidden=true;
     panel.innerHTML=`<summary>Performance checker</summary>
-      <dl class="perf-live"><div><dt>FPS</dt><dd id="perfFPS">—</dd></div><div><dt>Frame</dt><dd id="perfFrame">—</dd></div><div><dt>Physics CPU</dt><dd id="perfPhysics">—</dd></div><div><dt>Skin + fur CPU</dt><dd id="perfSkin">—</dd></div><div><dt>Draw submit CPU</dt><dd id="perfSubmit">—</dd></div><div><dt>GPU execution</dt><dd id="perfGPU">—</dd></div><div><dt>Fur layers</dt><dd id="perfLayers">—</dd></div></dl>
-      <p class="perf-note" id="perfGeometry"></p><button type="button" class="btn" id="perfRun">Check bottleneck · 16s</button>
-      <p class="perf-note">Compares full fur with fur drawing off, first still, then moving. CPU timings exclude GPU execution. GPU timing is shown when supported. Resets the toy and restores your controls.</p>
+      <dl class="perf-live"><div><dt>FPS</dt><dd id="perfFPS">—</dd></div><div><dt>Frame</dt><dd id="perfFrame">—</dd></div><div><dt>Physics CPU</dt><dd id="perfPhysics">—</dd></div><div><dt>${this.furEnabled?'Skin + fur CPU':'Skin CPU'}</dt><dd id="perfSkin">—</dd></div><div><dt>Draw submit CPU</dt><dd id="perfSubmit">—</dd></div><div><dt>GPU execution</dt><dd id="perfGPU">—</dd></div><div><dt>Fur layers</dt><dd id="perfLayers">—</dd></div></dl>
+      <p class="perf-note" id="perfGeometry"></p><button type="button" class="btn" id="perfRun">${this.runLabel}</button>
+      <p class="perf-note">${this.furEnabled?'Compares full fur with fur drawing off, first still, then moving.':'Mobile fur is disabled. Measures the smooth toy first still, then moving.'} CPU timings exclude GPU execution. GPU timing is shown when supported. Resets the toy and restores your controls.</p>
       <p id="perfResult" class="perf-result" role="status">Ready to check.</p><div id="perfTable"></div>`;
     document.querySelector('.panel').appendChild(panel);this.panel=panel;
     this.button=panel.querySelector('#perfRun');this.result=panel.querySelector('#perfResult');
@@ -3022,7 +3026,9 @@ class OctopusPerformanceCheck {
     this.disabledControls=[...document.querySelectorAll('.panel button,.panel input')].filter(el=>el!==this.button).map(el=>[el,el.disabled]);
     for(const [el] of this.disabledControls)el.disabled=true;
     this.canvas=document.querySelector('#gl');this.pointerStyle=this.canvas.style.pointerEvents;this.canvas.style.pointerEvents='none';
-    this.phases=[{name:'Still · full fur',paused:true,layers:this.full},{name:'Still · no fur drawing',paused:true,layers:0},{name:'Moving · full fur',paused:false,layers:this.full},{name:'Moving · no fur drawing',paused:false,layers:0}];
+    this.phases=this.furEnabled
+      ? [{name:'Still · full fur',paused:true,layers:this.full},{name:'Still · no fur drawing',paused:true,layers:0},{name:'Moving · full fur',paused:false,layers:this.full},{name:'Moving · no fur drawing',paused:false,layers:0}]
+      : [{name:'Still · smooth',paused:true,layers:0},{name:'Moving · smooth',paused:false,layers:0}];
     this.width=this.hooks.info().width;this.height=this.hooks.info().height;this.viewportWidth=window.innerWidth;
     this.button.textContent='Cancel check';this.hud.hidden=false;this.result.textContent='Checking on this device…';this.panel.querySelector('#perfTable').replaceChildren();
     document.querySelector('#stage').scrollIntoView({block:'center',behavior:'instant'});this.next(performance.now());
@@ -3043,21 +3049,24 @@ class OctopusPerformanceCheck {
     const put=(id,value)=>this.panel.querySelector('#'+id).textContent=value;
     put('perfFPS',s.fps.toFixed(1));put('perfFrame',s.frameMs.toFixed(1)+' ms');put('perfPhysics',s.physicsMs.toFixed(2)+' ms');put('perfSkin',s.skinFurMs.toFixed(2)+' ms');put('perfSubmit',s.submitMs.toFixed(2)+' ms');put('perfGPU',s.gpuMs===null?'Unavailable':s.gpuMs.toFixed(2)+' ms');put('perfLayers',String(i.layers));
     this.panel.querySelector('#perfGeometry').textContent=`${i.backend} · ${i.width} × ${i.height} pixels · ${i.vertices.toLocaleString()} vertices · ${i.triangles.toLocaleString()} body triangles · ${i.nodes.toLocaleString()} physics nodes · ${i.tets.toLocaleString()} tetrahedra`;
-    if(this.running)this.hud.textContent=`${this.phases[this.phase].name} · ${s.fps.toFixed(0)} FPS · ${Math.min(16,Math.floor(this.phase*4+(v.now-this.phaseStart)/1000))}/16s`;
+    if(this.running){const duration=this.phases.length*4;this.hud.textContent=`${this.phases[this.phase].name} · ${s.fps.toFixed(0)} FPS · ${Math.min(duration,Math.floor(this.phase*4+(v.now-this.phaseStart)/1000))}/${duration}s`;}
   }
-  finish(cancelled){if(!this.running)return;this.running=false;this.hooks.restore(this.saved);this.hooks.active(this.panel.open);for(const [el,disabled]of this.disabledControls)el.disabled=disabled;this.canvas.style.pointerEvents=this.pointerStyle;this.button.textContent='Check bottleneck · 16s';this.hud.hidden=true;this.samples=[];
+  finish(cancelled){if(!this.running)return;this.running=false;this.hooks.restore(this.saved);this.hooks.active(this.panel.open);for(const [el,disabled]of this.disabledControls)el.disabled=disabled;this.canvas.style.pointerEvents=this.pointerStyle;this.button.textContent=this.runLabel;this.hud.hidden=true;this.samples=[];
     if(cancelled){this.result.textContent='Check cancelled. Keep the tab visible and avoid rotating the phone or changing screen width while testing.';return;}
+    let renderGain=null,movingGain=null;
+    if(this.furEnabled){
     const [stillFull,stillOff,movingFull,movingOff]=this.rows;
     const gain=(a,b)=>{const value=(b.fps/a.fps-1)*100;return Math.abs(value)<.05?0:value;};
-    const renderGain=gain(stillFull,stillOff),movingGain=gain(movingFull,movingOff);
+    renderGain=gain(stillFull,stillOff);movingGain=gain(movingFull,movingOff);
     const cpuShare=movingFull.cpuMs/movingFull.frameMs;
     let finding=renderGain>20?'Fur drawing is a major bottleneck on this device.':cpuShare>.6?'JavaScript simulation and deformation use most of the frame budget.': 'Fur drawing did not dominate this check. Shadows, GPU limits, or the browser may contribute.';
     if(stillFull.fps>55&&stillOff.fps>55)finding='Both still tests ran smoothly; the frame-rate cap may hide spare GPU capacity.';
     if(stillFull.gpuMs!==null&&stillOff.gpuMs!==null&&stillFull.gpuMs>0){const furShare=Math.max(0,1-stillOff.gpuMs/stillFull.gpuMs);finding=`Fur drawing accounted for about ${(furShare*100).toFixed(0)}% of GPU execution in the still-toy comparison.`;}
     this.result.textContent=`${finding} Turning off fur drawing changed still FPS by ${renderGain.toFixed(0)}% and moving FPS by ${movingGain.toFixed(0)}%.`;
+    }else{const moving=this.rows[1];this.result.textContent=`Fur stayed off throughout this check. The moving toy averaged ${moving.fps.toFixed(1)} FPS, with ${moving.cpuMs.toFixed(1)} ms of CPU work${moving.gpuMs===null?'':` and ${moving.gpuMs.toFixed(1)} ms of GPU execution`} per frame.`;}
     const table=document.createElement('table');table.innerHTML='<thead><tr><th>Test</th><th>FPS</th><th>CPU</th><th>GPU</th></tr></thead><tbody>'+this.rows.map(r=>`<tr><td>${r.name}</td><td>${r.fps.toFixed(1)}</td><td>${r.cpuMs.toFixed(1)} ms</td><td>${r.gpuMs===null?'—':r.gpuMs.toFixed(1)+' ms'}</td></tr>`).join('')+'</tbody>';
     this.panel.querySelector('#perfTable').appendChild(table);
-    this.panel.dataset.report=JSON.stringify({width:this.width,height:this.height,renderer:this.hooks.info().backend,rows:this.rows,renderGain,movingGain});
+    this.panel.dataset.report=JSON.stringify({width:this.width,height:this.height,renderer:this.hooks.info().backend,furEnabled:this.furEnabled,rows:this.rows,renderGain,movingGain});
     this.panel.open=true;
   }
 }
@@ -3199,7 +3208,7 @@ async function main() {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'swatch'; b.dataset.key = key;
     b.setAttribute('role', 'radio');
-    b.setAttribute('aria-label', p.name + ' fur');
+    b.setAttribute('aria-label', p.name + (MOBILE_RENDER ? ' color' : ' fur'));
     b.innerHTML = `<span class="chip"><i style="background:${hex(p.furTip)}"></i><i style="background:${hex(p.furRoot)}"></i><i style="background:${hex(p.under)}"></i></span><span class="swname">${p.name}</span>`;
     b.addEventListener('click', () => setPalette(key));
     swatches.appendChild(b);
@@ -3251,7 +3260,7 @@ async function main() {
   let dyn = renderer.dyn, furOut = renderer.fur;
 
   // ── state ──
-  const state = { paused: false, slow: false, showMesh: false, tool: 'hand', az: 0.32, el: 0.48, zoom: 1, time: 0, furLen: SHAPE.fur };
+  const state = { paused: false, slow: false, showMesh: false, tool: 'hand', az: 0.32, el: 0.48, zoom: 1, time: 0, furLen: MOBILE_RENDER ? 0 : SHAPE.fur };
 
   // ── skinning: every render vertex follows its tetrahedron; normals ride along with the local
   // deformation (rest normal × cofactor of the node-averaged deformation gradient)
@@ -3336,10 +3345,10 @@ async function main() {
   // Every body vertex has a combed direction in rest space (carried by the deformation, so a stretched
   // patch keeps its pile), plus a tip offset that lags behind the skin's acceleration on a damped
   // spring: shake the octopus and its coat swings, set it down and it settles.
-  const comb = new Float32Array(nBody * 3), combDefault = new Float32Array(nBody * 3);
+  const comb = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3), combDefault = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3);
   {
     const R = rng(7);
-    for (let v = 0; v < nBody; v++) {
+    for (let v = 0; v < (MOBILE_RENDER ? 0 : nBody); v++) {
       const n = [restN[3 * v], restN[3 * v + 1], restN[3 * v + 2]];
       const p = [restP[3 * v], restP[3 * v + 1], restP[3 * v + 2]];
       let d;
@@ -3360,11 +3369,12 @@ async function main() {
     }
     comb.set(combDefault);
   }
-  const tip = new Float32Array(nBody * 3), tipV = new Float32Array(nBody * 3);
-  const lastP = new Float32Array(nBody * 3), lastVel = new Float32Array(nBody * 3);
+  const tip = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3), tipV = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3);
+  const lastP = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3), lastVel = new Float32Array(MOBILE_RENDER ? 0 : nBody * 3);
   let furPrimed = false, furCalm = 0, combDirty = true;
   const FUR_K = 900, FUR_C = 24, FUR_S = 22;
   function updateFur(dt, moved) {
+    if (MOBILE_RENDER) return false;
     if (furPrimed && dt === 0 && !moved && !combDirty) return false;
     combDirty = false;
     if (!furPrimed) {
@@ -3403,7 +3413,7 @@ async function main() {
     furCalm = energy / nBody;
     return moved || furCalm > 1e-5;
   }
-  function smoothFur() { comb.set(combDefault); combDirty = true; }
+  function smoothFur() { if (MOBILE_RENDER) return; comb.set(combDefault); combDirty = true; }
 
   // ── camera & framing (keeps the octopus clear of the text and panel) ──
   const cam = { viewProj: null, view: null, invViewProj: null, pos: [0, 0, 0], fwd: [0, 0, -1], dist: 10 };
@@ -3469,7 +3479,7 @@ async function main() {
   // ── resize ──
   // quality ladder: (pixel ratio cap, fur shells); steps down if the frame rate sags
   const QUALITY = MOBILE_RENDER
-    ? [[1.25, 12], [1.0, 10], [0.85, 8], [0.75, 6]]
+    ? [[1.25, 0], [1.0, 0], [0.85, 0], [0.75, 0]]
     : [[1.6, 36], [1.3, 30], [1.0, 24], [0.8, 18]];
   let performanceCheckActive = false;
   let quality = MOBILE_RENDER ? 1 : 0;
@@ -3561,6 +3571,7 @@ async function main() {
   // ── comb: stroking the fur lays the pile down the way the stroke went ──
   const BRUSH = 0.17;
   function brush(from, to) {
+    if (MOBILE_RENDER) return false;
     const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
     const dl = Math.hypot(dx, dy, dz);
     if (dl < 0.004) return false;
@@ -3840,6 +3851,7 @@ async function main() {
     comb: '<b>Comb</b>Stroke the fur to lay the pile the way you brush — against the grain it turns darker, with it, it shines. Smooth fur puts it all back.',
   };
   function setTool(t) {
+    if (MOBILE_RENDER && t === 'comb') t = 'hand';
     state.tool = t;
     for (const b of document.querySelectorAll('.tool')) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
     document.body.dataset.tool = t;
@@ -3849,6 +3861,15 @@ async function main() {
   }
   for (const b of document.querySelectorAll('.tool')) b.addEventListener('click', () => setTool(b.dataset.tool));
   setTool('hand');
+  if (MOBILE_RENDER) {
+    document.querySelector('[data-tool="comb"]').remove();
+    $('#smooth').remove();
+    document.querySelector('.tools').style.gridTemplateColumns='1fr 1fr';
+    $('#reset').classList.add('span');
+    document.querySelector('#swatches').previousElementSibling.textContent='Color';
+    document.querySelector('#swatches').setAttribute('aria-label','Octo color');
+    canvas.setAttribute('aria-label','Interactive 3D Octo. Drag the head or an arm, offer it a finger, shake it, or squish it.');
+  }
   $('#slow').addEventListener('change', e => { state.slow = e.target.checked; });
   $('#mesh').addEventListener('change', e => { state.showMesh = e.target.checked; });
   const pauseBtn = $('#pause');
@@ -3893,8 +3914,8 @@ async function main() {
     window.addEventListener('pagehide', () => lifecycle.abort(), { once: true });
     try {
       Promise.resolve(context.registerTool({
-        name: 'set_octopus_material', title: 'Set octopus fur colour',
-        description: 'Change the visible octopus fur to Blue, Lagoon, or Orchid (purple-pink).',
+        name: 'set_octopus_material', title: 'Set Octo color',
+        description: 'Change Octo to Blue, Lagoon, or Orchid (purple-pink).',
         inputSchema: { type: 'object', properties: { colour: { type: 'string', enum: ['blue', 'lagoon', 'orchid'] } }, required: ['colour'], additionalProperties: false },
         annotations: { readOnlyHint: false, untrustedContentHint: false },
         execute(input) {
@@ -3916,7 +3937,7 @@ async function main() {
     apply(phase) { state.paused=phase.paused; renderer.shells=phase.layers; resetAll(); sim.reset(phase.paused?0:0.3); dirty=true; acc=0; },
     nudge() { sim.nudge(0.65); },
     restore(saved) { state.paused=saved.paused; state.slow=saved.slow; state.showMesh=saved.showMesh; lockQ=saved.lock; performanceCheckActive=false; resize(); renderer.shells=saved.shells; resetAll(); },
-    info() { return { backend:renderer.backend, width:renderer.w, height:renderer.h, layers:renderer.shells, vertices:nV, triangles:renderMesh.body.count/3, nodes:sim.n, tets:sim.nT }; }
+    info() { return { backend:renderer.backend, width:renderer.w, height:renderer.h, layers:renderer.shells, furEnabled:!MOBILE_RENDER, vertices:nV, triangles:renderMesh.body.count/3, nodes:sim.n, tets:sim.nT }; }
   });
 
   // ── loop ──

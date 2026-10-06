@@ -5,7 +5,7 @@ class WebGLRenderer {
     this.canvas = canvas; this.backend = 'WEBGL'; this.mesh = mesh;
     const gl = this.gl = canvas.getContext('webgl2', {antialias: true, alpha: false, powerPreference: 'high-performance'});
     if (!gl) throw new Error('This browser could not start 3D graphics. Try enabling hardware acceleration.');
-    this.lost = false; this.w = this.h = 0; this.shells = 24;
+    this.lost = false; this.w = this.h = 0; this.shells = MOBILE_RENDER ? 0 : 24;
     canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; this.onLost?.({reason: 'lost', message: 'Graphics were interrupted. Reload to restart.'}); });
     const vertex = `#version 300 es
       precision highp float; precision highp int;
@@ -154,7 +154,7 @@ class WebGLRenderer {
   resize(w,h){this.w=this.canvas.width=Math.max(1,Math.floor(w));this.h=this.canvas.height=Math.max(1,Math.floor(h));}
   setUniforms(cam,light,palette,params){this.cam=cam;this.light=light;this.palette=palette;this.params=params;}
   uploadGeometry(particles,showMesh,moved){const gl=this.gl;const upload=(b,d)=>{gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferSubData(gl.ARRAY_BUFFER,0,d);};
-    if(moved)upload(this.bodyVAO.dynBuf,this.dyn);upload(this.bodyVAO.furBuf,this.fur);
+    if(moved)upload(this.bodyVAO.dynBuf,this.dyn);if(!MOBILE_RENDER)upload(this.bodyVAO.furBuf,this.fur);
     if(this.fingerVisible)upload(this.fingerVAO.dynBuf,this.fingerDyn);if(showMesh)upload(this.particleBuf,particles);}
   uniforms(p){const gl=this.gl;gl.useProgram(p);const u=n=>gl.getUniformLocation(p,n);
     gl.uniformMatrix4fv(u('vp'),false,this.cam.viewProj);gl.uniformMatrix4fv(u('inv'),false,this.cam.invViewProj);
@@ -177,7 +177,7 @@ class WebGLRenderer {
     const mode=gl.getUniformLocation(this.program,'mode');gl.uniform1i(mode,2);gl.drawElements(gl.TRIANGLES,m.props.count,gl.UNSIGNED_INT,m.props.first*4);
     gl.uniform1i(mode,0);gl.drawElements(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0);
     if(this.fingerVisible){gl.bindVertexArray(this.fingerVAO.vao);gl.uniform1i(mode,2);gl.drawElements(gl.TRIANGLES,this.fingerCount,gl.UNSIGNED_INT,0);gl.bindVertexArray(this.bodyVAO.vao);}
-    gl.uniform1i(mode,1);gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);gl.drawElementsInstanced(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0,this.shells);gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    if(this.shells>0){gl.uniform1i(mode,1);gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);gl.drawElementsInstanced(gl.TRIANGLES,m.body.count,gl.UNSIGNED_INT,0,this.shells);gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);}
     if(showMesh){gl.bindVertexArray(this.lineVAO);gl.disable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.uniform1i(mode,3);gl.drawElements(gl.LINES,this.edges.length,gl.UNSIGNED_INT,0);gl.disable(gl.BLEND);}
     gl.bindVertexArray(null);
   }

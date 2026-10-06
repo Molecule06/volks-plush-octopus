@@ -1,4 +1,4 @@
-# Plush Octopus — Claude Opus version
+# Octo — Volks Games
 
 Copied from the publicly shared artifact supplied by the user:
 https://claude.ai/artifact/C86ZNoRcqpt8Q8AZxupTZn
@@ -12,10 +12,11 @@ initial phone rendering quality, suspension while the tab is hidden, and a WebGL
 compatibility renderer for browsers without WebGPU. The compatibility renderer
 uses the same deforming mesh and simulation, with simplified lighting and fur shading.
 
-Phone-sized screens and touch devices now use a lighter surface mesh (15,498 vertices,
-28,432 body triangles), 10 starting fur layers, and smaller shadow maps. Automatic
-quality can reduce fur to 8 or 6 layers. The complete 2,608-node physics lattice stays
-in use. Larger desktop screens retain the full surface mesh and quality ladder.
+Phone-sized screens and touch devices use a smooth surface with no fur shells,
+fur-motion updates, fur buffer uploads, or comb controls. They retain a lighter
+surface mesh (15,498 vertices, 28,432 body triangles), smaller shadow maps, the color
+palettes, and the complete 2,608-node physics lattice. Larger desktop screens retain
+fur, comb controls, the full surface mesh, and the quality ladder.
 Append `?full` to compare the full rendering profile on a phone. A page reload selects
 the surface profile; resizing alone does not rebuild it.
 
@@ -31,8 +32,10 @@ The **Performance checker** is hidden on every page load. Press **Shift+P** or c
 **Volks Games** five times quickly to reveal it. Repeat either gesture to hide it;
 **Escape** also hides it and cancels an active check. Revealing it shows CPU breakdowns
 and optional WebGPU timestamps. Hidden diagnostics do not update or issue GPU queries.
-Its 16-second A/B check holds resolution and quality fixed, comparing full fur with
-fur drawing off, both still and moving. It resets the toy and restores the controls.
+On desktop its 16-second A/B check compares full fur with fur drawing off, both still
+and moving. On mobile an 8-second check measures the smooth toy still and moving;
+fur stays off in every phase. Both keep resolution and quality fixed, reset the toy,
+and restore the controls.
 GPU queries and diagnostic display updates run only while the checker is open or
 testing. Phone toolbar height changes no longer cancel checks: rendering resolution
 and layers stay fixed throughout the run. A width/orientation change or hidden tab
