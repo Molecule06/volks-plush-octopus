@@ -31,7 +31,7 @@ html = html.replace("setStatus(state.paused ? 'WEBGPU · PAUSED' : 'WEBGPU · LI
 html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.backend + ' · LIVE', 'live');")
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')
 html = html.replace("<title>Plush Octopus</title>", "<title>Plush Octopus · Opus material study</title>")
-html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Plush</span><span>Octopus.</span></h1><p class="brand">Volks games</p>')
+html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Plush</span><span>Octopus.</span></h1><p class="brand">Volks Games</p>')
 css = '''
 /* Phone adaptations: preserve the original studio and type direction. */
 body { min-height: 100dvh; }
