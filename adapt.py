@@ -31,9 +31,11 @@ html = html.replace("setStatus(state.paused ? 'WEBGPU · PAUSED' : 'WEBGPU · LI
 html = html.replace("setStatus('WEBGPU · LIVE', 'live');", "setStatus(renderer.backend + ' · LIVE', 'live');")
 html = html.replace('    if (held && pendingFrames <= 0)', '    if (document.hidden) { last = now; acc = 0; return; }\n    if (held && pendingFrames <= 0)')
 html = html.replace("<title>Plush Octopus</title>", "<title>Plush Octopus · Opus material study</title>")
+html = html.replace('<h1><span>Plush</span><span>Octopus.</span></h1>', '<h1><span>Plush</span><span>Octopus.</span></h1><p class="brand">Volks games</p>')
 css = '''
 /* Phone adaptations: preserve the original studio and type direction. */
 body { min-height: 100dvh; }
+.brand { font: 500 14px/1.3 var(--sans); letter-spacing: .14em; margin: -4px 0 18px; }
 .panel { max-height: calc(100dvh - 100px); overflow-y: auto; }
 .tool, .btn, .swatch { touch-action: manipulation; }
 @media (max-width: 860px), (max-height: 560px) and (max-width: 1000px) {
